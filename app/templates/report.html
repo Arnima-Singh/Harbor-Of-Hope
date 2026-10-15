@@ -1,0 +1,209 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report an Animal | Harbor Of Hope</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .report-page {
+            max-width: 760px;
+            margin: 50px auto;
+            padding: 24px;
+            color: #263b2d;
+        }
+
+        .report-card {
+            background: #fff;
+            border: 1px solid #e6e8df;
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 12px 35px rgba(38, 59, 45, 0.08);
+        }
+
+        .report-card h1 {
+            margin-bottom: 10px;
+            font-size: clamp(28px, 5vw, 40px);
+        }
+
+        .report-intro {
+            color: #68746a;
+            line-height: 1.7;
+            margin-bottom: 28px;
+        }
+
+        .report-form {
+            display: grid;
+            gap: 20px;
+        }
+
+        .form-field {
+            display: grid;
+            gap: 8px;
+        }
+
+        .form-field label {
+            font-weight: 600;
+        }
+
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 13px 14px;
+            border: 1px solid #d8ded5;
+            border-radius: 10px;
+            font: inherit;
+            background: #fff;
+            color: #263b2d;
+        }
+
+        .form-field input:focus,
+        .form-field select:focus,
+        .form-field textarea:focus {
+            outline: 2px solid #8aab8d;
+            outline-offset: 2px;
+        }
+
+        .form-field textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .report-submit {
+            border: none;
+            border-radius: 10px;
+            padding: 15px 20px;
+            background: #285c3b;
+            color: #fff;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .report-submit:hover {
+            background: #1e472d;
+        }
+
+        .back-home {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #285c3b;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        @media (max-width: 600px) {
+            .report-page {
+                margin: 20px auto;
+                padding: 16px;
+            }
+
+            .report-card {
+                padding: 22px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="flash-message {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+    <main class="report-page">
+        <a class="back-home" href="{{ url_for('main.home') }}">
+            ← Back to Harbor Of Hope
+        </a>
+
+        <section class="report-card">
+            <h1>Help an animal in need 🐾</h1>
+
+            <p class="report-intro">
+                Share what you've seen. Your report can help a rescue
+                volunteer find an animal that needs care.
+            </p>
+
+            <form class="report-form" action="#" method="post">
+                <div class="form-field">
+                    <label for="animal_type">What animal did you see?</label>
+                    <select id="animal_type" name="animal_type" required>
+                        <option value="">Choose an animal</option>
+                        <option value="Dog">Dog</option>
+                        <option value="Cat">Cat</option>
+                        <option value="Cow">Cow</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label for="condition">What help does it need?</label>
+                    <select id="condition" name="condition" required>
+                        <option value="">Choose the condition</option>
+                        <option value="Injured">Injured</option>
+                        <option value="Sick">Sick or unwell</option>
+                        <option value="Stray">Stray animal needing help</option>
+                        <option value="Trapped">Trapped or unable to move</option>
+                        <option value="Other">Other concern</option>
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label for="location">Where is the animal?</label>
+                    <input
+                        type="text"
+                        id="location"
+                        name="location"
+                        placeholder="Street, area, landmark, or address"
+                        required
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="description">Describe what happened</label>
+                    <textarea
+                        id="description"
+                        name="description"
+                        placeholder="Describe the animal and the help it needs..."
+                        required
+                    ></textarea>
+                </div>
+
+                <div class="form-field">
+                    <label for="photo">Animal photo (optional)</label>
+                    <input
+                        type="file"
+                        id="photo"
+                        name="photo"
+                        accept="image/png,image/jpeg,image/webp"
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="contact">Your contact number (optional)</label>
+                    <input
+                        type="tel"
+                        id="contact"
+                        name="contact"
+                        placeholder="Phone number"
+                    >
+                </div>
+
+                <button class="report-submit" type="submit">
+                    Submit Rescue Report
+                </button>
+            </form>
+        </section>
+    </main>
+</body>
+</html>
+```ee

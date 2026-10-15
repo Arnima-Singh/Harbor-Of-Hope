@@ -1,0 +1,109 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Login | Harbor Of Hope</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .login-container {
+            max-width: 420px;
+            margin: 80px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+        }
+
+        .login-container h1 {
+            color: #245c46;
+            margin-bottom: 10px;
+        }
+
+        .login-container p {
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .login-container label {
+            display: block;
+            margin-top: 20px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .login-container input {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .login-container button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 12px;
+            background: #245c46;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .login-container button:hover {
+            background: #194432;
+        }
+
+        .back-link {
+            color: #245c46;
+            text-decoration: none;
+        }
+
+        .message {
+            padding: 10px;
+            margin: 15px 0;
+            border-radius: 8px;
+            background: #fff0f0;
+            color: #a12626;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="login-container">
+        <a class="back-link" href="{{ url_for('main.home') }}">
+            ← Back to home
+        </a>
+
+        <h1>Team Login</h1>
+
+        <p>Sign in to access Harbor Of Hope rescue reports.</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="message">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <form method="POST">
+            <label for="password">Team password</label>
+
+            <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Enter team password"
+                required
+            >
+
+            <button type="submit">Log In</button>
+        </form>
+    </main>
+</body>
+</html>

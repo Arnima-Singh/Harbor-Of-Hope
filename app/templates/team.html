@@ -1,0 +1,114 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rescue Reports | Harbor Of Hope</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .team-page {
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 24px;
+        }
+
+        .team-page h1 {
+            color: #245c46;
+            margin-bottom: 10px;
+        }
+
+        .team-note {
+            color: #666;
+            margin-bottom: 28px;
+        }
+
+        .report-card {
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: 14px;
+            padding: 22px;
+            margin-bottom: 18px;
+        }
+
+        .report-card h2 {
+            color: #245c46;
+            margin-top: 0;
+        }
+
+        .report-card p {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 24px;
+            color: #245c46;
+            text-decoration: none;
+        }
+
+        .empty-message {
+            background: #fff;
+            padding: 22px;
+            border-radius: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="team-page">
+
+        
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 24px;">
+    <a class="back-link" href="{{ url_for('main.home') }}">
+        ← Back to Harbor Of Hope
+    </a>
+
+    <a href="{{ url_for('main.team_logout') }}"
+       style="background: #245c46; color: white; padding: 10px 16px; border-radius: 8px; text-decoration: none;">
+        Log Out
+    </a>
+</div>
+
+
+        <h1>Rescue Reports</h1>
+
+        <p class="team-note">
+            Review animal rescue reports submitted to Harbor Of Hope.
+        </p>
+
+        {% for report in reports %}
+            <article class="report-card">
+
+                <h2>Report #{{ report[0] }} — {{ report[1] }}</h2>
+
+                <p>
+                    <strong>Condition:</strong> {{ report[2] }}
+                </p>
+
+                <p>
+                    <strong>Location:</strong> {{ report[3] }}
+                </p>
+
+                <p>
+                    <strong>Description:</strong> {{ report[4] }}
+                </p>
+
+                <p>
+                    <strong>Contact:</strong>
+                    {{ report[5] or "Not provided" }}
+                </p>
+
+            </article>
+        {% else %}
+            <p class="empty-message">
+                No animal rescue reports have been submitted yet.
+            </p>
+        {% endfor %}
+
+    </main>
+</body>
+</html>
