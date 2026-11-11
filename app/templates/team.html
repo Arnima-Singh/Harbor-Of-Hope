@@ -15,15 +15,8 @@
             padding: 24px;
         }
 
-        .team-page h1 {
-            color: #245c46;
-            margin-bottom: 10px;
-        }
-
-        .team-note {
-            color: #666;
-            margin-bottom: 28px;
-        }
+        .team-page h1 { color: #245c46; margin-bottom: 10px; }
+        .team-note { color: #666; margin-bottom: 28px; }
 
         .report-card {
             background: #fff;
@@ -33,15 +26,8 @@
             margin-bottom: 18px;
         }
 
-        .report-card h2 {
-            color: #245c46;
-            margin-top: 0;
-        }
-
-        .report-card p {
-            margin: 10px 0;
-            line-height: 1.6;
-        }
+        .report-card h2 { color: #245c46; margin-top: 0; }
+        .report-card p { margin: 10px 0; line-height: 1.6; }
 
         .back-link {
             display: inline-block;
@@ -55,60 +41,188 @@
             padding: 22px;
             border-radius: 14px;
         }
+
+        .status-form {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e5e5;
+        }
+
+        .status-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #245c46;
+        }
+
+        .status-form select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 7px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .status-form button {
+            background: #245c46;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 7px;
+            cursor: pointer;
+        }
+
+        .status-form button:hover { background: #194331; }
+
+        .current-status {
+            font-weight: bold;
+            color: #245c46;
+        }
+
+        .animal-photo {
+            display: block;
+            width: 100%;
+            max-width: 400px;
+            max-height: 300px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-top: 15px;
+            border: 1px solid #e5e5e5;
+        }
+
+        .no-photo { color: #888; font-style: italic; }
+
+        .assignment-box {
+            margin-top: 20px;
+            padding: 18px;
+            background: #f0f7f2;
+            border: 1px solid #d8e9dc;
+            border-radius: 10px;
+        }
+
+        .assignment-box h3 {
+            color: #245c46;
+            margin-top: 0;
+        }
+
+        .not-assigned {
+            color: #a36b16;
+            font-weight: bold;
+        }
+
+        .assigned {
+            color: #245c46;
+            font-weight: bold;
+        }
+
+        .flash-message {
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            background: #e2f3e8;
+            color: #155724;
+        }
     </style>
 </head>
 
 <body>
-    <main class="team-page">
+<main class="team-page">
 
-        
-<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 24px;">
-    <a class="back-link" href="{{ url_for('main.home') }}">
-        ← Back to Harbor Of Hope
-    </a>
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
+        <a class="back-link" href="{{ url_for('main.home') }}">
+            ← Back to Harbor Of Hope
+        </a>
 
-    <a href="{{ url_for('main.team_logout') }}"
-       style="background: #245c46; color: white; padding: 10px 16px; border-radius: 8px; text-decoration: none;">
-        Log Out
-    </a>
-</div>
+        <a href="{{ url_for('main.team_logout') }}"
+           style="background:#245c46; color:white; padding:10px 16px; border-radius:8px; text-decoration:none;">
+            Log Out
+        </a>
+    </div>
 
+    <h1>Rescue Reports</h1>
 
-        <h1>Rescue Reports</h1>
+    <p class="team-note">
+        Review rescue reports and track the volunteers assigned to help animals.
+    </p>
 
-        <p class="team-note">
-            Review animal rescue reports submitted to Harbor Of Hope.
-        </p>
-
-        {% for report in reports %}
-            <article class="report-card">
-
-                <h2>Report #{{ report[0] }} — {{ report[1] }}</h2>
-
-                <p>
-                    <strong>Condition:</strong> {{ report[2] }}
-                </p>
-
-                <p>
-                    <strong>Location:</strong> {{ report[3] }}
-                </p>
-
-                <p>
-                    <strong>Description:</strong> {{ report[4] }}
-                </p>
-
-                <p>
-                    <strong>Contact:</strong>
-                    {{ report[5] or "Not provided" }}
-                </p>
-
-            </article>
-        {% else %}
-            <p class="empty-message">
-                No animal rescue reports have been submitted yet.
-            </p>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="flash-message">{{ message }}</div>
         {% endfor %}
+    {% endwith %}
 
-    </main>
+    {% for report in reports %}
+        <article class="report-card">
+
+            <h2>Report #{{ report['id'] }} — {{ report['animal_type'] }}</h2>
+
+            <p><strong>Condition:</strong> {{ report['condition'] }}</p>
+
+            <p><strong>Location:</strong> {{ report['location'] }}</p>
+
+            <p><strong>Description:</strong> {{ report['description'] }}</p>
+
+            <p><strong>Contact:</strong> {{ report['contact'] or "Not provided" }}</p>
+
+            <p class="current-status">
+                Current Rescue Status: {{ report['status'] }}
+            </p>
+
+            {% if report['photo'] %}
+                <p><strong>Animal Photo:</strong></p>
+                <img
+                    class="animal-photo"
+                    src="{{ url_for('main.uploaded_file', filename=report['photo']) }}"
+                    alt="Animal needing rescue"
+                >
+            {% else %}
+                <p class="no-photo">No photo uploaded for this report.</p>
+            {% endif %}
+
+            <div class="assignment-box">
+                <h3>Volunteer Assignment</h3>
+
+                {% if report['volunteer_name'] %}
+                    <p class="assigned">✓ Volunteer Assigned</p>
+
+                    <p><strong>Name:</strong> {{ report['volunteer_name'] }}</p>
+                    <p><strong>Email:</strong> {{ report['volunteer_email'] }}</p>
+                    <p><strong>Phone:</strong> {{ report['volunteer_phone'] }}</p>
+                    <p><strong>Assignment Status:</strong> {{ report['assignment_status'] }}</p>
+                    <p><strong>Assigned On:</strong> {{ report['assigned_at'] }}</p>
+                {% else %}
+                    <p class="not-assigned">No volunteer assigned yet.</p>
+                {% endif %}
+            </div>
+
+            <form class="status-form"
+                  method="POST"
+                  action="{{ url_for('main.update_report_status', report_id=report['id']) }}">
+
+                <label for="status-{{ report['id'] }}">
+                    Update Rescue Status
+                </label>
+
+                <select name="status" id="status-{{ report['id'] }}">
+                    {% for status in statuses %}
+                        <option value="{{ status }}"
+                            {% if report['status'] == status %}selected{% endif %}>
+                            {{ status }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <button type="submit">Update Status</button>
+            </form>
+
+        </article>
+
+    {% else %}
+        <p class="empty-message">
+            No animal rescue reports have been submitted yet.
+        </p>
+    {% endfor %}
+
+</main>
 </body>
 </html>

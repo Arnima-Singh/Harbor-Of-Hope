@@ -1,0 +1,228 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Volunteer Dashboard | Harbor Of Hope</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .dashboard-container {
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .dashboard-card {
+            background: white;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.07);
+        }
+
+        .task-card {
+            border: 1px solid #e5e5e5;
+            padding: 20px;
+            margin-top: 15px;
+            border-radius: 12px;
+        }
+
+        .task-card h3 {
+            color: #26734d;
+        }
+
+        .accept-button, .logout-button {
+            display: inline-block;
+            padding: 11px 20px;
+            margin-top: 12px;
+            border: none;
+            border-radius: 8px;
+            background: #26734d;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .logout-button {
+            background: #a94442;
+        }
+
+        .task-status {
+            color: #26734d;
+            font-weight: bold;
+        }
+
+        .empty-message {
+            color: #777;
+            padding: 15px 0;
+        }
+
+        .animal-photo {
+            width: 100%;
+            max-width: 250px;
+            max-height: 180px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="dashboard-container">
+
+    <div class="dashboard-card">
+
+        <h1>Welcome, {{ volunteer['name'] }}! 🐾</h1>
+
+        <p>Thank you for helping animals in need.</p>
+
+        <h2>Your Profile</h2>
+
+        <p><strong>Name:</strong> {{ volunteer['name'] }}</p>
+        <p><strong>Email:</strong> {{ volunteer['email'] }}</p>
+        <p><strong>Phone:</strong> {{ volunteer['phone'] }}</p>
+        <p><strong>Location:</strong> {{ volunteer['location'] }}</p>
+
+        <a href="{{ url_for('main.volunteer_logout') }}"
+           class="logout-button">Logout</a>
+
+    </div>
+
+
+    <!-- FLASH MESSAGES -->
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="dashboard-card">
+                <p>{{ message }}</p>
+            </div>
+        {% endfor %}
+    {% endwith %}
+
+
+    <!-- AVAILABLE TASKS -->
+
+    <div class="dashboard-card">
+
+        <h2>Available Rescue Tasks 🐾</h2>
+
+        <p>Choose an animal rescue task you can help with.</p>
+
+        {% if available_tasks %}
+
+            {% for task in available_tasks %}
+
+                <div class="task-card">
+
+                    <h3>{{ task['animal_type'] }}</h3>
+
+                    <p>
+                        <strong>Condition:</strong>
+                        {{ task['condition'] }}
+                    </p>
+
+                    <p>
+                        <strong>Location:</strong>
+                        {{ task['location'] }}
+                    </p>
+
+                    <p>
+                        <strong>Description:</strong>
+                        {{ task['description'] }}
+                    </p>
+
+                    {% if task['photo'] %}
+                        <img
+                            class="animal-photo"
+                            src="{{ url_for('main.uploaded_file', filename=task['photo']) }}"
+                            alt="Animal needing rescue"
+                        >
+                    {% endif %}
+
+                    <p class="task-status">Status: Pending</p>
+
+                    <form method="POST"
+                          action="{{ url_for('main.accept_rescue_task', report_id=task['id']) }}">
+
+                        <button type="submit" class="accept-button">
+                            Accept Rescue Task
+                        </button>
+
+                    </form>
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <p class="empty-message">
+                No rescue tasks are currently available.
+            </p>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- MY TASKS -->
+
+    <div class="dashboard-card">
+
+        <h2>My Accepted Rescue Tasks</h2>
+
+        {% if my_tasks %}
+
+            {% for task in my_tasks %}
+
+                <div class="task-card">
+
+                    <h3>{{ task['animal_type'] }}</h3>
+
+                    <p>
+                        <strong>Location:</strong>
+                        {{ task['location'] }}
+                    </p>
+
+                    <p>
+                        <strong>Condition:</strong>
+                        {{ task['condition'] }}
+                    </p>
+
+                    <p>
+                        <strong>Description:</strong>
+                        {{ task['description'] }}
+                    </p>
+
+                    <p class="task-status">
+                        Assignment: {{ task['assignment_status'] }}
+                    </p>
+
+                    <p>
+                        <strong>Rescue status:</strong>
+                        {{ task['status'] }}
+                    </p>
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <p class="empty-message">
+                You haven't accepted any rescue tasks yet.
+            </p>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+</body>
+</html>

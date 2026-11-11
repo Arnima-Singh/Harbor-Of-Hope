@@ -111,7 +111,7 @@
 </head>
 
 <body>
-    
+
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for category, message in messages %}
@@ -133,7 +133,9 @@
                 volunteer find an animal that needs care.
             </p>
 
-            <form class="report-form" action="#" method="post">
+            <form class="report-form" action="#" method="POST"
+                  enctype="multipart/form-data">
+
                 <div class="form-field">
                     <label for="animal_type">What animal did you see?</label>
                     <select id="animal_type" name="animal_type" required>
@@ -159,43 +161,29 @@
 
                 <div class="form-field">
                     <label for="location">Where is the animal?</label>
-                    <input
-                        type="text"
-                        id="location"
-                        name="location"
-                        placeholder="Street, area, landmark, or address"
-                        required
-                    >
+                    <input type="text" id="location" name="location"
+                           placeholder="Street, area, landmark, or address"
+                           required>
                 </div>
 
                 <div class="form-field">
                     <label for="description">Describe what happened</label>
-                    <textarea
-                        id="description"
-                        name="description"
-                        placeholder="Describe the animal and the help it needs..."
-                        required
-                    ></textarea>
+                    <textarea id="description" name="description"
+                              placeholder="Describe the animal and the help it needs..."
+                              required></textarea>
                 </div>
 
                 <div class="form-field">
                     <label for="photo">Animal photo (optional)</label>
-                    <input
-                        type="file"
-                        id="photo"
-                        name="photo"
-                        accept="image/png,image/jpeg,image/webp"
-                    >
+                    <input type="file" id="photo" name="photo"
+                           accept=".jpg,.jpeg,.png,.webp">
+                    <small>Accepted formats: JPG, PNG, WEBP. Maximum size: 5 MB.</small>
                 </div>
 
                 <div class="form-field">
                     <label for="contact">Your contact number (optional)</label>
-                    <input
-                        type="tel"
-                        id="contact"
-                        name="contact"
-                        placeholder="Phone number"
-                    >
+                    <input type="tel" id="contact" name="contact"
+                           placeholder="Phone number">
                 </div>
 
                 <button class="report-submit" type="submit">
@@ -206,4 +194,3 @@
     </main>
 </body>
 </html>
-```ee

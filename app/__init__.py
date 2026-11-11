@@ -4,15 +4,15 @@ from flask import Flask
 from dotenv import load_dotenv
 from database import create_table
 
-
-# Load settings from the project's .env file
 load_dotenv()
 
 
 def create_app():
     app = Flask(__name__)
-
-    # Read the secret key from .env
+    app.config["UPLOAD_FOLDER"] = os.path.join(
+    app.root_path, "uploads"
+)
+    app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 
     if not app.config["SECRET_KEY"]:
