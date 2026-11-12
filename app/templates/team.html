@@ -122,13 +122,44 @@
             background: #e2f3e8;
             color: #155724;
         }
+
+        .dashboard-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+        }
+
+        .dashboard-button {
+            display: inline-block;
+            background: #245c46;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .dashboard-button:hover {
+            background: #194331;
+        }
+
+        .adoption-button {
+            background: #b77935;
+        }
+
+        .adoption-button:hover {
+            background: #925d27;
+        }
     </style>
 </head>
 
 <body>
+
 <main class="team-page">
 
     <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
+
         <a class="back-link" href="{{ url_for('main.home') }}">
             ← Back to Harbor Of Hope
         </a>
@@ -137,6 +168,7 @@
            style="background:#245c46; color:white; padding:10px 16px; border-radius:8px; text-decoration:none;">
             Log Out
         </a>
+
     </div>
 
     <h1>Rescue Reports</h1>
@@ -145,6 +177,17 @@
         Review rescue reports and track the volunteers assigned to help animals.
     </p>
 
+    <!-- DASHBOARD ACTIONS -->
+
+    <div class="dashboard-actions">
+
+        <a class="dashboard-button adoption-button"
+           href="{{ url_for('main.manage_adoptions') }}">
+            🏡 Manage Adoptions
+        </a>
+
+    </div>
+
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% for category, message in messages %}
             <div class="flash-message">{{ message }}</div>
@@ -152,6 +195,7 @@
     {% endwith %}
 
     {% for report in reports %}
+
         <article class="report-card">
 
             <h2>Report #{{ report['id'] }} — {{ report['animal_type'] }}</h2>
@@ -169,20 +213,27 @@
             </p>
 
             {% if report['photo'] %}
+
                 <p><strong>Animal Photo:</strong></p>
+
                 <img
                     class="animal-photo"
                     src="{{ url_for('main.uploaded_file', filename=report['photo']) }}"
                     alt="Animal needing rescue"
                 >
+
             {% else %}
+
                 <p class="no-photo">No photo uploaded for this report.</p>
+
             {% endif %}
 
             <div class="assignment-box">
+
                 <h3>Volunteer Assignment</h3>
 
                 {% if report['volunteer_name'] %}
+
                     <p class="assigned">✓ Volunteer Assigned</p>
 
                     <p><strong>Name:</strong> {{ report['volunteer_name'] }}</p>
@@ -190,9 +241,13 @@
                     <p><strong>Phone:</strong> {{ report['volunteer_phone'] }}</p>
                     <p><strong>Assignment Status:</strong> {{ report['assignment_status'] }}</p>
                     <p><strong>Assigned On:</strong> {{ report['assigned_at'] }}</p>
+
                 {% else %}
+
                     <p class="not-assigned">No volunteer assigned yet.</p>
+
                 {% endif %}
+
             </div>
 
             <form class="status-form"
@@ -204,25 +259,33 @@
                 </label>
 
                 <select name="status" id="status-{{ report['id'] }}">
+
                     {% for status in statuses %}
+
                         <option value="{{ status }}"
                             {% if report['status'] == status %}selected{% endif %}>
                             {{ status }}
                         </option>
+
                     {% endfor %}
+
                 </select>
 
                 <button type="submit">Update Status</button>
+
             </form>
 
         </article>
 
     {% else %}
+
         <p class="empty-message">
             No animal rescue reports have been submitted yet.
         </p>
+
     {% endfor %}
 
 </main>
+
 </body>
 </html>

@@ -17,6 +17,8 @@ from database import DATABASE
 main = Blueprint("main", __name__)
 
 RESCUE_STATUSES = ["Pending", "In Progress", "Resolved"]
+ADOPTION_STATUSES = ["Available", "Adopted"]
+APPLICATION_STATUSES = ["Pending", "Approved", "Rejected"]
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
 
 
@@ -25,6 +27,29 @@ def allowed_file(filename):
         "." in filename
         and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
     )
+
+
+def save_uploaded_photo(photo):
+    """Save an uploaded photo and return its unique filename."""
+    if not photo or not photo.filename:
+        return None
+
+    if not allowed_file(photo.filename):
+        raise ValueError("Invalid photo format. Use JPG, JPEG, PNG or WEBP.")
+
+    original_filename = secure_filename(photo.filename)
+    extension = original_filename.rsplit(".", 1)[1].lower()
+    filename = f"{uuid.uuid4().hex}.{extension}"
+
+    upload_folder = current_app.config["UPLOAD_FOLDER"]
+    os.makedirs(upload_folder, exist_ok=True)
+
+    photo.save(os.path.join(upload_folder, filename))
+    return filename
+
+
+def team_required():
+    return session.get("team_logged_in") is True
 
 
 # HOME PAGE
@@ -64,27 +89,15 @@ def report():
         photo_filename = None
         photo_path = None
 
-        if photo and photo.filename:
-            if not allowed_file(photo.filename):
-                flash(
-                    "Invalid photo format. Use JPG, JPEG, PNG or WEBP.",
-                    "error"
-                )
-                return redirect(url_for("main.report"))
-
-            original_filename = secure_filename(photo.filename)
-            extension = original_filename.rsplit(".", 1)[1].lower()
-            photo_filename = f"{uuid.uuid4().hex}.{extension}"
-
-            upload_folder = current_app.config["UPLOAD_FOLDER"]
-            os.makedirs(upload_folder, exist_ok=True)
-
-            photo_path = os.path.join(upload_folder, photo_filename)
-            photo.save(photo_path)
-
-        connection = None
-
         try:
+            photo_filename = save_uploaded_photo(photo)
+
+            if photo_filename:
+                photo_path = os.path.join(
+                    current_app.config["UPLOAD_FOLDER"],
+                    photo_filename
+                )
+
             connection = sqlite3.connect(DATABASE)
             connection.execute(
                 """
@@ -98,17 +111,17 @@ def report():
                 )
             )
             connection.commit()
+            connection.close()
+
+        except ValueError as error:
+            flash(str(error), "error")
+            return redirect(url_for("main.report"))
 
         except sqlite3.Error:
             if photo_path and os.path.exists(photo_path):
                 os.remove(photo_path)
-
             flash("Something went wrong while saving your report.", "error")
             return redirect(url_for("main.report"))
-
-        finally:
-            if connection:
-                connection.close()
 
         flash("Your animal rescue report has been saved!", "success")
         return redirect(url_for("main.report"))
@@ -204,7 +217,7 @@ def volunteer_login():
     return render_template("volunteer_login.html")
 
 
-# VOLUNTEER DASHBOARD WITH RESCUE TASKS
+# VOLUNTEER DASHBOARD
 
 @main.route("/volunteer/dashboard")
 def volunteer_dashboard():
@@ -333,11 +346,7 @@ def accept_rescue_task(report_id):
         )
 
         connection.execute(
-            """
-            UPDATE reports
-            SET status = 'In Progress'
-            WHERE id = ?
-            """,
+            "UPDATE reports SET status = 'In Progress' WHERE id = ?",
             (report_id,)
         )
 
@@ -370,12 +379,12 @@ def volunteer_logout():
     return redirect(url_for("main.volunteer_login"))
 
 
-# PRIVATE TEAM DASHBOARD WITH VOLUNTEER DETAILS
+# TEAM RESCUE DASHBOARD
 
 @main.route("/team")
 def team_reports():
 
-    if not session.get("team_logged_in"):
+    if not team_required():
         flash("Please log in to access team reports.", "error")
         return redirect(url_for("main.team_login"))
 
@@ -386,14 +395,8 @@ def team_reports():
         reports = connection.execute(
             """
             SELECT
-                r.id,
-                r.animal_type,
-                r.condition,
-                r.location,
-                r.description,
-                r.contact,
-                r.status,
-                r.photo,
+                r.id, r.animal_type, r.condition, r.location,
+                r.description, r.contact, r.status, r.photo,
                 v.name AS volunteer_name,
                 v.email AS volunteer_email,
                 v.phone AS volunteer_phone,
@@ -405,7 +408,6 @@ def team_reports():
             ORDER BY r.id DESC
             """
         ).fetchall()
-
     finally:
         connection.close()
 
@@ -421,7 +423,7 @@ def team_reports():
 @main.route("/team/report/<int:report_id>/status", methods=["POST"])
 def update_report_status(report_id):
 
-    if not session.get("team_logged_in"):
+    if not team_required():
         flash("Please log in first.", "error")
         return redirect(url_for("main.team_login"))
 
@@ -433,19 +435,15 @@ def update_report_status(report_id):
 
     connection = sqlite3.connect(DATABASE)
 
-    cursor = connection.execute(
-        """
-        UPDATE reports
-        SET status = ?
-        WHERE id = ?
-        """,
-        (new_status, report_id)
-    )
-
-    updated = cursor.rowcount > 0
-
-    connection.commit()
-    connection.close()
+    try:
+        cursor = connection.execute(
+            "UPDATE reports SET status = ? WHERE id = ?",
+            (new_status, report_id)
+        )
+        updated = cursor.rowcount > 0
+        connection.commit()
+    finally:
+        connection.close()
 
     if not updated:
         flash("Report not found.", "error")
@@ -484,3 +482,287 @@ def team_logout():
 
     flash("You have been logged out.", "success")
     return redirect(url_for("main.home"))
+
+
+# ==========================================
+# ANIMAL ADOPTION SYSTEM
+# ==========================================
+
+# PUBLIC ADOPTION LISTINGS
+
+@main.route("/adopt")
+def adoption_list():
+
+    connection = sqlite3.connect(DATABASE)
+    connection.row_factory = sqlite3.Row
+
+    try:
+        animals = connection.execute(
+            """
+            SELECT *
+            FROM adoptions
+            WHERE status = 'Available'
+            ORDER BY id DESC
+            """
+        ).fetchall()
+    finally:
+        connection.close()
+
+    return render_template("adopt.html", animals=animals)
+
+
+# INDIVIDUAL ANIMAL DETAILS AND APPLICATION
+
+@main.route("/adopt/<int:animal_id>", methods=["GET", "POST"])
+def adoption_detail(animal_id):
+
+    connection = sqlite3.connect(DATABASE)
+    connection.row_factory = sqlite3.Row
+
+    try:
+        animal = connection.execute(
+            "SELECT * FROM adoptions WHERE id = ?",
+            (animal_id,)
+        ).fetchone()
+
+        if not animal or animal["status"] != "Available":
+            flash("This animal is no longer available for adoption.", "error")
+            return redirect(url_for("main.adoption_list"))
+
+        if request.method == "POST":
+
+            applicant_name = request.form.get("applicant_name", "").strip()
+            email = request.form.get("email", "").strip().lower()
+            phone = request.form.get("phone", "").strip()
+            address = request.form.get("address", "").strip()
+            reason = request.form.get("reason", "").strip()
+
+            if not all([
+                applicant_name, email, phone, address, reason
+            ]):
+                flash("Please complete all application fields.", "error")
+                return redirect(
+                    url_for("main.adoption_detail", animal_id=animal_id)
+                )
+
+            # Check availability again before saving
+            current_animal = connection.execute(
+                "SELECT status FROM adoptions WHERE id = ?",
+                (animal_id,)
+            ).fetchone()
+
+            if not current_animal or current_animal["status"] != "Available":
+                flash("This animal is no longer available.", "error")
+                return redirect(url_for("main.adoption_list"))
+
+            connection.execute(
+                """
+                INSERT INTO adoption_applications
+                (adoption_id, applicant_name, email, phone, address, reason)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    animal_id, applicant_name, email,
+                    phone, address, reason
+                )
+            )
+            connection.commit()
+
+            flash("Your adoption application has been submitted!", "success")
+            return redirect(url_for("main.adoption_list"))
+
+    finally:
+        connection.close()
+
+    return render_template("adoption_detail.html", animal=animal)
+
+
+# TEAM ADOPTION MANAGEMENT AND ADD ANIMALS
+
+@main.route("/team/adoptions", methods=["GET", "POST"])
+def manage_adoptions():
+
+    if not team_required():
+        flash("Please log in to manage adoptions.", "error")
+        return redirect(url_for("main.team_login"))
+
+    if request.method == "POST":
+
+        name = request.form.get("name", "").strip()
+        animal_type = request.form.get("animal_type", "").strip()
+        breed = request.form.get("breed", "").strip()
+        age = request.form.get("age", "").strip()
+        gender = request.form.get("gender", "").strip()
+        description = request.form.get("description", "").strip()
+
+        if not all([name, animal_type, description]):
+            flash("Name, animal type and description are required.", "error")
+            return redirect(url_for("main.manage_adoptions"))
+
+        photo_filename = None
+        photo_path = None
+
+        try:
+            photo_filename = save_uploaded_photo(
+                request.files.get("photo")
+            )
+
+            if photo_filename:
+                photo_path = os.path.join(
+                    current_app.config["UPLOAD_FOLDER"],
+                    photo_filename
+                )
+
+            connection = sqlite3.connect(DATABASE)
+            connection.execute(
+                """
+                INSERT INTO adoptions
+                (name, animal_type, breed, age, gender, description, photo)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    name, animal_type, breed, age,
+                    gender, description, photo_filename
+                )
+            )
+            connection.commit()
+            connection.close()
+
+        except ValueError as error:
+            flash(str(error), "error")
+            return redirect(url_for("main.manage_adoptions"))
+
+        except sqlite3.Error:
+            if photo_path and os.path.exists(photo_path):
+                os.remove(photo_path)
+            flash("Could not add the animal. Please try again.", "error")
+            return redirect(url_for("main.manage_adoptions"))
+
+        flash("Animal added to adoption listings successfully!", "success")
+        return redirect(url_for("main.manage_adoptions"))
+
+    connection = sqlite3.connect(DATABASE)
+    connection.row_factory = sqlite3.Row
+
+    try:
+        animals = connection.execute(
+            "SELECT * FROM adoptions ORDER BY id DESC"
+        ).fetchall()
+
+        applications = connection.execute(
+            """
+            SELECT
+                aa.*,
+                ad.name AS animal_name,
+                ad.animal_type AS animal_type
+            FROM adoption_applications aa
+            JOIN adoptions ad ON aa.adoption_id = ad.id
+            ORDER BY aa.id DESC
+            """
+        ).fetchall()
+    finally:
+        connection.close()
+
+    return render_template(
+        "team_adoptions.html",
+        animals=animals,
+        applications=applications,
+        application_statuses=APPLICATION_STATUSES,
+        adoption_statuses=ADOPTION_STATUSES
+    )
+
+
+# APPROVE OR REJECT AN ADOPTION APPLICATION
+
+@main.route(
+    "/team/adoption/application/<int:application_id>/status",
+    methods=["POST"]
+)
+def update_adoption_application(application_id):
+
+    if not team_required():
+        flash("Please log in first.", "error")
+        return redirect(url_for("main.team_login"))
+
+    new_status = request.form.get("status", "").strip()
+
+    if new_status not in APPLICATION_STATUSES:
+        flash("Invalid application status.", "error")
+        return redirect(url_for("main.manage_adoptions"))
+
+    connection = sqlite3.connect(DATABASE)
+    connection.execute("PRAGMA foreign_keys = ON")
+
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+
+        application = connection.execute(
+            """
+            SELECT id, adoption_id, status
+            FROM adoption_applications
+            WHERE id = ?
+            """,
+            (application_id,)
+        ).fetchone()
+
+        if not application:
+            connection.rollback()
+            flash("Adoption application not found.", "error")
+            return redirect(url_for("main.manage_adoptions"))
+
+        animal_id = application[1]
+
+        if new_status == "Approved":
+            animal = connection.execute(
+                "SELECT status FROM adoptions WHERE id = ?",
+                (animal_id,)
+            ).fetchone()
+
+            if not animal or animal[0] != "Available":
+                connection.rollback()
+                flash("This animal is no longer available.", "error")
+                return redirect(url_for("main.manage_adoptions"))
+
+            connection.execute(
+                """
+                UPDATE adoption_applications
+                SET status = 'Rejected'
+                WHERE adoption_id = ?
+                AND id != ?
+                AND status = 'Pending'
+                """,
+                (animal_id, application_id)
+            )
+
+            connection.execute(
+                """
+                UPDATE adoptions
+                SET status = 'Adopted'
+                WHERE id = ?
+                """,
+                (animal_id,)
+            )
+
+        connection.execute(
+            """
+            UPDATE adoption_applications
+            SET status = ?
+            WHERE id = ?
+            """,
+            (new_status, application_id)
+        )
+
+        connection.commit()
+        flash(
+            f"Application status updated to {new_status}.",
+            "success"
+        )
+
+    except sqlite3.Error:
+        connection.rollback()
+        flash("Could not update the application. Please try again.", "error")
+
+    finally:
+        connection.close()
+
+    return redirect(url_for("main.manage_adoptions"))

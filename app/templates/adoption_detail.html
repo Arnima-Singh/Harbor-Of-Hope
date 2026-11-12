@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ animal.name }} | Adopt | Harbor Of Hope</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .adoption-detail {
+            max-width: 850px;
+            margin: 40px auto;
+            padding: 25px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+        }
+
+        .animal-photo {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .application-form {
+            margin-top: 30px;
+        }
+
+        .application-form input,
+        .application-form textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0 18px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        .application-form button {
+            background: #287a52;
+            color: white;
+            border: none;
+            padding: 12px 22px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .application-form button:hover {
+            background: #1e603f;
+        }
+
+        .flash-message {
+            padding: 12px;
+            margin-bottom: 15px;
+            background: #e4f5e9;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="adoption-detail">
+
+    <a href="{{ url_for('main.adoption_list') }}">← Back to Adoption Listings</a>
+
+    <h1>{{ animal.name }}</h1>
+
+    {% if animal.photo %}
+        <img
+            class="animal-photo"
+            src="{{ url_for('main.uploaded_file', filename=animal.photo) }}"
+            alt="{{ animal.name }}"
+        >
+    {% endif %}
+
+    <h2>Animal Details</h2>
+
+    <p><strong>Animal Type:</strong> {{ animal.animal_type }}</p>
+    <p><strong>Breed:</strong> {{ animal.breed or 'Not specified' }}</p>
+    <p><strong>Age:</strong> {{ animal.age or 'Not specified' }}</p>
+    <p><strong>Gender:</strong> {{ animal.gender or 'Not specified' }}</p>
+
+    <p><strong>About:</strong></p>
+    <p>{{ animal.description }}</p>
+
+    <hr>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="flash-message">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    {% if animal.status == 'Available' %}
+
+        <div class="application-form">
+
+            <h2>Apply to Adopt {{ animal.name }}</h2>
+            <p>Complete this form to submit your adoption application.</p>
+
+            <form method="POST">
+
+                <label>Full Name</label>
+                <input type="text" name="applicant_name" required>
+
+                <label>Email Address</label>
+                <input type="email" name="email" required>
+
+                <label>Phone Number</label>
+                <input type="tel" name="phone" required>
+
+                <label>Full Address</label>
+                <textarea name="address" rows="3" required></textarea>
+
+                <label>Why do you want to adopt this animal?</label>
+                <textarea name="reason" rows="5" required></textarea>
+
+                <button type="submit">Submit Adoption Application</button>
+
+            </form>
+
+        </div>
+
+    {% else %}
+
+        <h3>This animal is no longer available for adoption.</h3>
+
+    {% endif %}
+
+</div>
+
+</body>
+</html>

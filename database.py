@@ -67,5 +67,38 @@ def create_table():
         )
     """)
 
+    # Animals available for adoption
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS adoptions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            animal_type TEXT NOT NULL,
+            breed TEXT,
+            age TEXT,
+            gender TEXT,
+            description TEXT NOT NULL,
+            photo TEXT,
+            status TEXT NOT NULL DEFAULT 'Available',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # Adoption applications
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS adoption_applications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            adoption_id INTEGER NOT NULL,
+            applicant_name TEXT NOT NULL,
+            email TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            address TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'Pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (adoption_id)
+                REFERENCES adoptions(id)
+        )
+    """)
+
     connection.commit()
     connection.close()
